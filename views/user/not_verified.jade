@@ -1,0 +1,9 @@
+extends ../layout
+
+block body
+  .alert.alert-danger(role="alert")
+    | Ваш аккаунт не активирован. Пожалуйста, перейдите по ссылке из письма, полученного при регистрации.
+    br
+    | Кликните&nbsp;
+    a(href="/user/sendActivationEmail") здесь
+    | , чтобы отправить письмо ещё раз.

@@ -18,26 +18,8 @@ module.exports = {
           res.view('user/error', {message: 'При регистрации пользователя произошла ошибка: ' + error.message});
         }
         else{
-          var nodemailer = require('nodemailer');
-          var smtpTransport = require('nodemailer-smtp-transport');
-          var transporter = nodemailer.createTransport(smtpTransport({
-              host: 'localhost',
-              port: 25,
-              ignoreTLS: true
-            })
-          );
-          var mailOptions ={
-            from: 'test@cloudmaps.ru' ,
-            to: model.email,
-            subject: 'User Activation Email',
-            text: 'http://localhost:1337/user/register/?id='+data.id+'&t='+model.password
-          };
-          transporter.sendMail(mailOptions, function(error, info){
-            if(error){
-              res.view('user/error', {message: 'При регистрации пользователя произошла ошибка: ' + error.message});
-            }
-            else res.view('user/after_register');
-          });
+          // if there are no errors, send verification email
+          sendActEmail(req,res,data)
         }
       });
     }
@@ -79,6 +61,7 @@ module.exports = {
           res.view('user/error',{message: 'При проверке логина и пароля произошла ошибка: ' + error.message});
         }
         else{
+          // TODO check if a user if found otherwise there is a null error
           if(user.password == crypto.createHash('sha256').update(req.param('password')).digest('hex')){
             req.session.user = user;
             return res.redirect('/user/profile/'+user.id);
@@ -341,6 +324,52 @@ module.exports = {
     else{
       return res.badRequest();
     }
+  },
+
+  //this view send activation email
+  sendActivationEmail: function (req, res) {
+      // checking if a user logged in before getting here. If so, req.session.user contains user object
+      if (typeof req.session.user != 'undefined') {
+        model = req.session.user;
+      }
+      // we are here only in case of direct request of the controller without previous login as a non-active user
+      // or registration process. If so, the funtion just doesn't know what user should it send email to.
+      else {
+        res.view('user/error', {message: 'При отправке письма произошла ошибка: невозможно определить пользователя.'});
+      }
+      sendActEmail(req,res,model)
   }
 };
 
+// this function just sends verification email.
+// has to be separate function for the code to be DRY, as it could be called
+// 1) when a user is created,
+// 2) or when a  user requests to send a verification letter one more time
+function sendActEmail (req, res, model) {
+  var nodemailer = require('nodemailer');
+  var smtpTransport = require('nodemailer-smtp-transport');
+  var transporter = nodemailer.createTransport(smtpTransport({
+      host: 'localhost',
+      port: 25,
+      ignoreTLS: true
+    })
+  );
+  var mailOptions ={
+    from: 'test@cloudmaps.ru' ,
+    to: model.email,
+    subject: 'User Activation Email',
+    // TODO: generate verification tocken, not to use password (even encrypted)
+    text: 'http://localhost:1337/user/register/?id='+model.id+'&t='+model.password
+  };
+  transporter.sendMail(mailOptions, function(error, info){
+    if(error){
+      res.view('user/error', {message: 'При отправке письма произошла ошибка: ' + error.message});
+    }
+    //TODO: create different views for successful email sent after 1) registration, 2) repeated activation email request
+    else {
+      // clearing authorization
+      delete req.session.user;
+      res.view('user/after_register');
+    }
+  });
+}
