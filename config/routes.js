@@ -47,6 +47,14 @@ module.exports.routes = {
   ***************************************************************************/
 
   '/login': {controller: 'UserController', action: 'login'},
-  '/logout': {controller: 'UserController', action: 'logout'}
-
+  '/logout': {controller: 'UserController', action: 'logout'},
+  '/user/register': {controller: 'UserController', action: 'register'},
+  '/user/friends': {controller: 'UserController', action: 'friends'},
+  '/user/request': {controller: 'UserController', action: 'request'},
+  '/user/requests': {controller: 'UserController', action: 'requests'},
+  '/user/avatar': {controller: 'UserController', action: 'avatar'},
+  '/user/list': {controller: 'UserController', action: 'list'},
+  '/user/subscribe': {controller: 'UserController', action: 'subscribe'},
+  '/user/sendActivationEmail': {controller: 'UserController', action: 'sendActivationEmail'},
+  '/user/:username': {controller: 'UserController', action: 'profile'}
 };

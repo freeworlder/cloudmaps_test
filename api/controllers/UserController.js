@@ -64,7 +64,7 @@ module.exports = {
           // TODO check if a user if found otherwise there is a null error
           if(user.password == crypto.createHash('sha256').update(req.param('password')).digest('hex')){
             req.session.user = user;
-            return res.redirect('/user/profile/'+user.id);
+            return res.redirect('/user/'+user.username);
           }
           else{
             res.view('user/error',{message: 'Неверный логин или пароль'});
@@ -77,13 +77,13 @@ module.exports = {
         return res.view();
       }
       else{
-        return res.redirect('/user/profile/'+req.session.user.id);
+        return res.redirect('/user/'+req.session.user.username);
       }
     }
   },
 
   profile: function(req, res){
-    User.findOne(req.param('id')).exec(function(error, user){
+    User.findOne({username: req.param('username')}).exec(function(error, user){
       if(error){
         res.view('user/error',{message: 'Ошибка: ' + error.message});
       }
