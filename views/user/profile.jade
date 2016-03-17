@@ -99,7 +99,7 @@ block scripts
 
         });
       };
-      
+
       function get_friends(){
         $.ajax({
           url: '/user/friends/'+my.id,
@@ -126,9 +126,9 @@ block scripts
           url: '/user/list',
           method: 'GET'
         }).done(function(response){
-          
+
           $('#newFriends .modal-body').html(response);
-          
+
           $(".request").on('click', function(e){
             $.ajax({
               url: '/user/request',
@@ -162,7 +162,9 @@ block scripts
           },
           resize:{
             width: 200,
-            height: 200
+            height: 200,
+            // in order to get square pics, we will crop the image before upload
+            crop: true
           }
       });
 
@@ -183,7 +185,7 @@ block scripts
           alert(result.response);
         }
       });
-      
+
       io.socket.get('/user/subscribe', function(resData, jwres){
         return;
       });
