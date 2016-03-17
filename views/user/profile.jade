@@ -11,24 +11,33 @@ block body
           a(href="/logout") Выход
   .col-sm-3.text-center
     img#avatar(src="/user/avatar/"+user.id, alt=name)
-    div.text-center
-      a#select-avatar(href="#") Сменить аватар
-  .col-sm-5
-    .panel.panel-default
-      .panel-heading
-        h1.panel-title Друзья
-      .panel-body
-        h4 Запросы
-        #requests
-        h4 Мои друзья
-        #friends
-      .panel-footer
-        button.btn.btn-default(type="button", data-toggle="modal", data-target="#newFriends") Найти новых друзей
-  .col-sm-4
-    .panel.panel-default
-      .panel-heading
-        h1.panel-title Карта
-      #map.panel-body(style="height: 300px")
+    if user.id == current_user.id
+      div.text-center
+        a#select-avatar(href="#") Сменить аватар
+  if user.id == current_user.id
+    .col-sm-5
+      .panel.panel-default
+        .panel-heading
+          h1.panel-title Друзья
+        .panel-body
+          h4 Запросы
+          #requests
+          h4 Мои друзья
+          #friends
+        .panel-footer
+          button.btn.btn-default(type="button", data-toggle="modal", data-target="#newFriends") Найти новых друзей
+    .col-sm-4
+      .panel.panel-default
+        .panel-heading
+          h1.panel-title Карта
+        #map.panel-body(style="height: 300px")
+  else
+    .col-sm-9
+      .panel.panel-default
+        .panel-heading
+          h1.panel-title Карта
+        #map.panel-body(style="height: 300px")
+
 
   #newFriends.modal.fade(tabindex='-1', role='dialog', aria-labelledby='newFriendsLabel')
     .modal-dialog(role='document')
@@ -164,6 +173,7 @@ block scripts
             width: 200,
             height: 200,
             // in order to get square pics, we will crop the image before upload
+            // TOD allow user to crop a desired part of a photo
             crop: true
           }
       });
