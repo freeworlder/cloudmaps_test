@@ -95,6 +95,19 @@ module.exports = {
   },
 
   profile: function (req, res) {
+    // making a list of friends ids
+    var friends_ids, requests_ids = [];
+    Friend.find({id_user: req.session.user.id}).exec(function (error, friends) {
+      if (error) {
+        return res.negotiate(error);
+      }
+      else {
+        friends_ids = _.map(friends, function (friend) {
+          return friend.id_friend;
+        });
+      }
+    });
+
     User.findOne({username: req.param('username')}).exec(function (error, user) {
       if (error) {
         res.view('user/error', {message: 'Ошибка: ' + error.message});
