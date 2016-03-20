@@ -18,6 +18,8 @@ module.exports = {
     active: { type: 'boolean' },
     password: { type: 'string' },
     online: { type: 'boolean' },
+    latitude: {type: 'float'},
+    longitude: {type: 'float'},
     friends: {
       collection: 'friend',
       via: 'id_user'

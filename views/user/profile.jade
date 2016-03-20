@@ -37,6 +37,8 @@ block body
         .panel-heading
           h1.panel-title Карта
         #map.panel-body(style="height: 300px")
+        .panel-footer
+          div#no-location Нет информации о положении пользователя.
 
 
   #newFriends.modal.fade(tabindex='-1', role='dialog', aria-labelledby='newFriendsLabel')
@@ -53,30 +55,83 @@ block body
 
 block styles
   link(rel="stylesheet", href="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.css")
+  link(rel="stylesheet" href="/styles/Leaflet.vector-markers.css")
+
 
 block scripts
   script(src="/plupload-2.1.8/plupload.full.min.js")
   script(src="/plupload-2.1.8/i18n/ru.js")
   script(src="http://cdn.leafletjs.com/leaflet/v0.7.7/leaflet.js")
+  script(src="/js/leaflet.vector-markers.min.js")
   script(type="text/javascript").
     $(function(){
-      var my = JSON.parse('!{JSON.stringify(user)}');
-
+      var user = JSON.parse('!{JSON.stringify(user)}');
+      var current_user = JSON.parse('!{JSON.stringify(current_user)}');
       var map = L.map('map').setView([51.505, -0.09], 13);
+      $('#no-location').hide();
+
+      if (current_user.id != user.id) {
+        //check if location is saved for the user
+        var latitude = !{latitude?latitude:0};
+        var longitude = !{longitude?longitude:0};
+
+        if (latitude && longitude) {
+          var color, popup;
+          if (user.online == true) {
+            color = 'green';
+            popup = 'Пользователь '+[user.firstname, user.lastname].join(' ')+" онлайн. Представлено текущее положение."
+          }
+          else {
+            color = 'grey';
+            popup = 'Пользователь ' + [user.firstname, user.lastname].join(' ') + " оффлайн. " +
+              "Представлено последнее сохранёное положение."
+
+          }
+          var marker = L.VectorMarkers.icon({
+            icon: 'map-marker',
+            markerColor: color
+          });
+
+          map.setView([latitude, longitude], 13);
+          var map_marker = L.marker([latitude, longitude], {icon: marker});
+          map_marker.addTo(map);
+          map_marker.bindPopup(popup).openPopup();
+
+        }
+        // if there is no saved location show info
+        else {
+          $('#no-location').show();
+        }
+      }
       L.tileLayer('http://{s}.tile.osm.org/{z}/{x}/{y}.png', {
         attribution: '&copy; <a href="http://osm.org/copyright">OpenStreetMap</a> contributors'
       }).addTo(map);
 
-      map.on('locationfound', function(e){
-        map.setView([e.latitude, e.longitude],13);
+      map.on('locationfound', function(e) {
+        map.setView([e.latitude, e.longitude], 13);
         L.marker([e.latitude, e.longitude]).addTo(map);
+        $.ajax({
+          url: '/user/location/'+user.id,
+          method: 'PUT',
+          data: {
+            latitude: e.latitude,
+            longitude: e.longitude
+          },
+          error: function (response) {
+              alert("Ошибка при сохранении положения: " + response.error.message);
+          }
+        });
+
       });
 
       map.on('locationerror', function(e){
         console.log(e.message);
       });
 
-      map.locate();
+      // locate user map only if he is viewing his own profile
+      if (user.id == current_user.id) {
+        map.locate();
+      }
 
       //declare ids here to be accessable from io.sockets below
       // valuse are set from get_friends() and get_requests() respectfully
@@ -85,7 +140,7 @@ block scripts
 
       function get_requests(){
         $.ajax({
-          url: '/user/requests/'+my.id,
+          url: '/user/requests/'+user.id,
           method: 'GET'
         }).done(function(response){
           $('#requests').html(response.html_update);
@@ -117,7 +172,7 @@ block scripts
 
       function get_friends(){
         $.ajax({
-          url: '/user/friends/'+my.id,
+          url: '/user/friends/'+user.id,
           method: 'GET'
         }).done(function(response){
 
@@ -214,7 +269,7 @@ block scripts
           case 'created':
             var request = event.data;
             var user = request.id_requesting;
-            if(my.id == request.id_requested.id){
+            if(user.id == request.id_requested.id){
               get_requests();
             }
             break;
@@ -226,7 +281,7 @@ block scripts
       io.socket.on('friend', function (event){
         switch (event.verb) {
           case 'created':
-            if(my.id == event.data.id_user || my.id == event.data.id_friend){
+            if(user.id == event.data.id_user || user.id == event.data.id_friend){
               get_friends();
             }
             break;
@@ -236,7 +291,7 @@ block scripts
       });
 
       io.socket.on('delete_friend', function(data){
-        if(my.id == data.id_user || my.id == data.id_friend){
+        if(user.id == data.id_user || user.id == data.id_friend){
           get_friends();
         }
       });

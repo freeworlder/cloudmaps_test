@@ -95,8 +95,9 @@ module.exports = {
   },
 
   profile: function (req, res) {
-    // making a list of friends ids
-    var friends_ids, requests_ids = [];
+    // making a list of friends ids to check if viewed profile is own of one of friends
+    // (others are not allowed to be viewed)
+    var friends_ids = [];
     Friend.find({id_user: req.session.user.id}).exec(function (error, friends) {
       if (error) {
         return res.negotiate(error);
@@ -115,10 +116,14 @@ module.exports = {
       else {
         //showing profile only of self or one of the friends.
         if (user.id == req.session.user.id || friends_ids.indexOf(user.id)>-1) {
-          res.view({
-            user: _.omit(user, 'password'),
-            current_user: _.omit(req.session.user, 'password')
-          });
+          var params = {};
+          params.user = _.omit(user, 'password');
+          params.current_user = _.omit(req.session.user, 'password');
+          if (user.id != req.session.user.id) {
+            params.latitude = user.latitude?user.latitude:0;
+            params.longitude = user.longitude?user.longitude:0;
+          }
+          res.view(params);
         }
         // If requested profile of a non-friend user, showing error
         else {
@@ -431,6 +436,24 @@ module.exports = {
       res.view('user/error', {message: 'При отправке письма произошла ошибка: невозможно определить пользователя.'});
     }
     sendActEmail(req, res, model)
+  },
+
+  location: function (req, res) {
+    if (req.method == 'PUT') {
+      var latitude = parseFloat(req.param('latitude'));
+      var longitude = parseFloat(req.param('longitude'));
+      if (req.session.user != 'undefined' && latitude && longitude) {
+        User.update(req.session.user.id, {latitude: latitude, longitude: longitude}).exec(function (error) {
+          if (error) {
+            res.negotiate(error);
+          }
+          else {
+            res.ok();
+          }
+        });
+
+      }
+    }
   }
 };
 
