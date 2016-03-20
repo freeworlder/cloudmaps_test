@@ -1,11 +1,15 @@
 .vmiddle{
   vertical-align: middle !important;
 }
-td.online {
+.online {
   color: green;
   font-size: 36px;
 }
-td.offline {
+.offline {
   color: red;
   font-size: 36px;
+}
+.status-label {
+  position: relative;
+  top: -1px;
 }

@@ -5,7 +5,12 @@ block body
   nav.navbar.navbar-default
     .container-fluid
       .navbar-header
-        span.navbar-brand= name
+        span.navbar-brand
+          if user.id != current_user.id
+            a(href="/user/" + current_user.username)
+              span.glyphicon.glyphicon-home
+            | &nbsp;
+          = name
       ul.nav.navbar-nav.navbar-right
         li
           a(href="/logout") Выход
@@ -14,6 +19,18 @@ block body
     if user.id == current_user.id
       div.text-center
         a#select-avatar(href="#") Сменить аватар
+    else if user.online
+      div.text-center.vmiddle
+        span.online.text-center.vmiddle.status-label
+          | &bull;
+        | &nbsp;Онлайн
+    else
+      div.text-center
+        span.offline.text-center.vmiddle.status-label
+          | &bull;
+        | &nbsp;Оффлайн
+
+
   if user.id == current_user.id
     .col-sm-5
       .panel.panel-default
