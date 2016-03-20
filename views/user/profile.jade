@@ -78,12 +78,18 @@ block scripts
 
       map.locate();
 
+      //declare ids here to be accessable from io.sockets below
+      // valuse are set from get_friends() and get_requests() respectfully
+      var friends_ids;
+      var requests_ids;
+
       function get_requests(){
         $.ajax({
           url: '/user/requests/'+my.id,
           method: 'GET'
         }).done(function(response){
-          $('#requests').html(response);
+          $('#requests').html(response.html_update);
+          requests_ids = response.requests_ids;
 
           $('#requests .accept').on('click', function(e){
             $.ajax({
@@ -115,7 +121,8 @@ block scripts
           method: 'GET'
         }).done(function(response){
 
-          $('#friends').html(response);
+          $('#friends').html(response.html_update);
+          friends_ids = response.friends_ids;
 
           $('.delete-friend').on('click', function(e){
             $.ajax({
@@ -131,6 +138,8 @@ block scripts
       get_friends();
 
       $('#newFriends').on('show.bs.modal', function(e){
+        //clearing old results of friends searching
+        $('#newFriends .modal-body').html('...');
         $.ajax({
           url: '/user/list',
           method: 'GET'
@@ -230,6 +239,26 @@ block scripts
         if(my.id == data.id_user || my.id == data.id_friend){
           get_friends();
         }
+      });
+
+      io.socket.on('friend_online', function (data) {
+        if (friends_ids.indexOf(data.id_friend)>-1) {
+          get_friends();
+        }
+        if (requests_ids.indexOf(data.id_friend) > -1) {
+          get_requests();
+        }
+
+      });
+
+      io.socket.on('friend_offline', function (data) {
+        if (friends_ids.indexOf(data.id_friend) > -1) {
+          get_friends();
+        }
+        if (requests_ids.indexOf(data.id_friend) > -1) {
+          get_requests();
+        }
+
       });
 
     });

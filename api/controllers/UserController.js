@@ -64,6 +64,18 @@ module.exports = {
           // TODO check if a user if found otherwise there is a null error
           if (user.password == crypto.createHash('sha256').update(req.param('password')).digest('hex')) {
             req.session.user = user;
+            // setting online status
+            User.update(user.id, {online: true}).exec(function (error) {
+              if (error) {
+                res.view('user/error', {message: 'При входе произошла ошибка: ' + error.message});
+              }
+              else {
+                req.session.user.online = true;
+                sails.sockets.blast('friend_online', {
+                  id_friend: user.id
+                });
+              }
+            });
             return res.redirect('/user/' + user.username);
           }
           else {
@@ -83,18 +95,6 @@ module.exports = {
   },
 
   profile: function (req, res) {
-    // making a list of friends ids
-    var friends_ids = [];
-    Friend.find({id_user: req.session.user.id}).exec(function (error, friends) {
-      if (error) {
-        return res.negotiate(error);
-      }
-      else {
-        friends_ids = _.map(friends, function (friend) {
-          return friend.id_friend;
-        });
-      }
-    });
     User.findOne({username: req.param('username')}).exec(function (error, user) {
       if (error) {
         res.view('user/error', {message: 'Ошибка: ' + error.message});
@@ -122,6 +122,19 @@ module.exports = {
     if (req.xhr) {
       switch (req.method) {
         case 'GET':
+          //building friends_ids list
+          var friends_ids = [];
+          Friend.find({id_user: req.session.user.id}).exec(function (error, friends) {
+            if (error) {
+              return res.negotiate(error);
+            }
+            else {
+              friends_ids = _.map(friends, function (friend) {
+                return friend.id_friend;
+              });
+            }
+          });
+
           User.findOne(parseInt(req.param('id', 0))).populate('friends').exec(function (error, user) {
             if (error)
               return res.negotiate(error);
@@ -133,7 +146,16 @@ module.exports = {
                 if (error)
                   return res.negotiate(error);
                 else {
-                  return res.view({friends: friends});
+                  var data = {};
+                  res.render('user/friends', {friends: friends}, function (error, html){
+                    if (error)
+                      return res.negotiate(error);
+                    else {
+                      data.html_update = html;
+                    }
+                  });
+                  data.friends_ids = friends_ids;
+                  return res.json(data);
                 }
               });
             }
@@ -170,6 +192,7 @@ module.exports = {
     if (req.xhr) {
       switch (req.method) {
         case 'GET':
+          var requests_ids = [];
           Request.find({
             id_requested: parseInt(req.param('id', 0))
           }).populate('id_requesting').exec(function (error, requests) {
@@ -177,11 +200,24 @@ module.exports = {
               return res.negotiate(error);
             }
             else {
-              return res.view({
+              var data = {};
+              res.render('user/requests',
+              {
                 requests: _.map(requests, function (request) {
                   return request.id_requesting;
                 })
+              },
+              function (error, html){
+                if (error)
+                  return res.negotiate(error);
+                else {
+                  data.html_update = html;
+                }
+                });
+              data.requests_ids = _.map(requests, function (request) {
+                return request.id_requesting.id;
               });
+              return res.json(data);
             }
           });
           break;
@@ -266,8 +302,19 @@ module.exports = {
   },
 
   logout: function (req, res) {
-    delete req.session.user;
-    return res.redirect('/');
+    //setting offline status
+    User.update(req.session.user.id, {online: false}).exec(function (error) {
+      if (error) {
+        res.view('user/error', {message: 'При выходе из системы произошла ошибка: ' + error.message});
+      }
+      else {
+        sails.sockets.blast('friend_offline', {
+          id_friend: req.session.user.id
+        });
+        delete req.session.user;
+        return res.redirect('/');
+      }
+    });
   },
 
   list: function (req, res) {

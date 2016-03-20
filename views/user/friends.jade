@@ -3,6 +3,12 @@ if friends.length
     each friend in friends
       -var name = [friend.firstname, friend.lastname].join(' ')
       tr
+        if friend.online
+          td.vmiddle.online.text-center
+            | &bull;
+        else
+          td.vmiddle.offline.text-center
+            | &bull;
         td
           a(href="/user/"+friend.username)
             img(src="/user/avatar/" + friend.id, width="60", height="60" alt=name)

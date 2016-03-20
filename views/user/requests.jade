@@ -3,6 +3,12 @@ if requests.length
     each request in requests
       -var name = [request.firstname, request.lastname].join(' ')
       tr
+        if request.online
+          td.vmiddle.online.text-center
+            | &bull;
+        else
+          td.vmiddle.offline.text-center
+            | &bull;
         td
           img(src="/user/avatar/" + request.id, width="60", height="60" alt=name)
         td.vmiddle= name
