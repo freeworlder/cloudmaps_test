@@ -32,15 +32,17 @@ module.exports = {
             res.view('user/error', {message: 'При активации пользователя произошла ошибка: ' + error.message});
           }
           else {
-            if (user.password == token) {
-              User.update(id, {active: true}).exec(function (error) {
-                if (error) {
-                  res.view('user/error', {message: 'При активации пользователя произошла ошибка: ' + error.message});
-                }
-                else {
-                  res.redirect('/login');
-                }
-              });
+            if (user != null) {
+              if (user.password == token) {
+                User.update(id, {active: true}).exec(function (error) {
+                  if (error) {
+                    res.view('user/error', {message: 'При активации пользователя произошла ошибка: ' + error.message});
+                  }
+                  else {
+                    res.redirect('/login');
+                  }
+                });
+              }
             }
             else {
               res.view('user/error', {message: 'При активации пользователя произошла ошибка: неверный ключ активации'});
@@ -61,25 +63,30 @@ module.exports = {
           res.view('user/error', {message: 'При проверке логина и пароля произошла ошибка: ' + error.message});
         }
         else {
-          // TODO check if a user if found otherwise there is a null error
-          if (user.password == crypto.createHash('sha256').update(req.param('password')).digest('hex')) {
-            req.session.user = user;
-            // setting online status
-            User.update(user.id, {online: true}).exec(function (error) {
-              if (error) {
-                res.view('user/error', {message: 'При входе произошла ошибка: ' + error.message});
-              }
-              else {
-                req.session.user.online = true;
-                sails.sockets.blast('friend_online', {
-                  id_friend: user.id
-                });
-              }
-            });
-            return res.redirect('/user/' + user.username);
+          if (user != null) {
+            if (user.password == crypto.createHash('sha256').update(req.param('password')).digest('hex')) {
+              req.session.user = user;
+              // setting online status
+              User.update(user.id, {online: true}).exec(function (error) {
+                if (error) {
+                  res.view('user/error', {message: 'При входе произошла ошибка: ' + error.message});
+                }
+                else {
+                  req.session.user.online = true;
+                  sails.sockets.blast('friend_online', {
+                    id_friend: user.id
+                  });
+                }
+              });
+              return res.redirect('/user/' + user.username);
+            }
+            else {
+              res.view('user/error', {message: 'Неверный логин или пароль'});
+            }
+
           }
           else {
-            res.view('user/error', {message: 'Неверный логин или пароль'});
+            res.view('user/error', {message: 'Пользователь не найден'});
           }
         }
       });
