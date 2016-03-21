@@ -147,42 +147,40 @@ module.exports = {
     if (req.xhr) {
       switch (req.method) {
         case 'GET':
-          //building friends_ids list
-          var friends_ids = [];
-          Friend.find({id_user: req.session.user.id}).exec(function (error, friends) {
-            if (error) {
-              return res.negotiate(error);
-            }
-            else {
-              friends_ids = _.map(friends, function (friend) {
-                return friend.id_friend;
-              });
-            }
-          });
-
-          User.findOne(parseInt(req.param('id', 0))).populate('friends').exec(function (error, user) {
+          User.findOne(parseInt(req.param('id', 0))).exec(function (error, user) {
             if (error)
               return res.negotiate(error);
             else {
-              var friend_ids = _.map(user.friends, function (friend) {
-                return friend.id_friend;
-              });
-              User.find(friend_ids).exec(function (error, friends) {
-                if (error)
+              //building friends_ids list
+              Friend.find({id_user: user.id}).exec(function (error, friends) {
+                if (error) {
                   return res.negotiate(error);
+                }
                 else {
-                  var data = {};
-                  res.render('user/friends', {friends: friends}, function (error, html){
+                  var friends_ids = _.map(friends, function (friend) {
+                    return friend.id_friend;
+                  });
+                  //getting all friends collection
+                  User.find(friends_ids).exec(function (error, friends) {
                     if (error)
                       return res.negotiate(error);
                     else {
-                      data.html_update = html;
+                      res.render('user/friends', {friends: friends}, function (error, html){
+                        if (error)
+                          return res.negotiate(error);
+                        else {
+                          var data = {};
+                          data.html_update = html;
+                          data.friends_ids = friends_ids;
+                          return res.json(data);
+                        }
+                      });
                     }
                   });
-                  data.friends_ids = friends_ids;
-                  return res.json(data);
+
                 }
               });
+
             }
           });
           break;
@@ -458,6 +456,44 @@ module.exports = {
             res.ok();
           }
         });
+
+      }
+    }
+  },
+
+  messages: function (req, res) {
+    if (req.xhr) {
+      var friend_id = req.param('id');
+      switch (req.method) {
+        case 'GET':
+          Message.find({
+            id_to: [req.session.user.id,friend_id],
+            id_from: [req.session.user.id,friend_id]
+          }).populateAll().exec(function (error, messages) {
+            res.view({
+              messages: messages,
+              friend: friend_id
+            })
+          });
+          break;
+        case 'POST':
+          Message.create({id_from: req.session.user.id, id_to: friend_id, text: req.param('message_text'), read: false},
+            function(error, message){
+              if (error) {
+                res.negotiate(error)
+              }
+              else {
+                Message.find({
+                  id_to: [req.session.user.id,friend_id],
+                  id_from: [req.session.user.id,friend_id]
+                }).populateAll().exec(function (error, messages) {
+                  res.view({
+                    messages: messages,
+                    friend: friend_id
+                  })
+                });
+              }
+            });
 
       }
     }
