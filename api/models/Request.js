@@ -10,7 +10,7 @@ module.exports = {
   tableName: 'requests',
 
   attributes: {
-    id: {type: 'integer', primaryKey: true},
+    id: {type: 'integer', primaryKey: true, autoIncrement: true},
 
     id_requesting: {
       type: 'integer',

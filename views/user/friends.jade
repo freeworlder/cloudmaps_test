@@ -13,8 +13,43 @@ if friends.length
           a(href="/user/"+friend.username)
             img(src="/user/avatar/" + friend.id, width="60", height="60" alt=name)
         td.vmiddle
-          a(href="/user/" + friend.username)=name
+          a(href="/user/" + friend.username)
+            =name
+        td.vmiddle
+          button.btn.btn-default(type="button", data-toggle="modal", data-target="#messages")
+            span.glyphicon.glyphicon-envelope.vmiddle.envelop
+            | &nbsp;
+            #friend-id.hidden
+              =friend.id
         td.vmiddle
           a.delete-friend(href="#", data-id=friend.id) Удалить
 else
   span У Вас пока нет друзей
+script(type="text/javascript").
+  $('#messages').on('show.bs.modal', function (e) {
+    //clearing old results of friends searching
+    $('#messages .modal-body').html('...');
+    var invoker = $(e.relatedTarget);
+    var id = $(invoker).find('#friend-id').html();
+    $.ajax({
+      url: '/user/messages/'+id,
+      method: 'GET'
+    }).done(function (response) {
+
+      $('#messages .modal-body').html(response);
+
+      $('#send-message').on('click', function(link){
+        $.ajax({
+          url: '/user/messages/' + id,
+          method: 'POST',
+          data: {
+            message_text: $('#message-text').val()
+          }
+        }).success(function (response) {
+          $('#messages .modal-body').html(response);
+        })
+      })
+
+
+    });
+  });

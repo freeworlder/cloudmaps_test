@@ -10,7 +10,7 @@ module.exports = {
   tableName: 'friends',
 
   attributes: {
-    id: { type: 'integer', primaryKey: true },
+    id: { type: 'integer', primaryKey: true, autoIncrement: true },
     id_user: {
       type: 'integer',
       model: 'user'

@@ -1,0 +1,23 @@
+//
+   Created by Andrey on 20/03/2016.
+if messages.length
+  table.table.table-striped
+    each message in messages
+      tr
+        if message.id_from.id == friend
+          td.vmiddle.right
+            =message.text
+        else
+          td.vmiddle.left
+            =message.text
+
+else
+  #no-messages У ваc нет сообщений.
+
+form#new-message.form-horizontal(action="", method="POST")
+  .form-group
+    label.col-sm-2(for="message-text") Сообщение:
+    .col-sm-6
+      input#message-text.form-control(type="text", name="message-text", required)
+    .col-sm-4
+      input.form-control#send-message(type="button", value="Отправить сообщение")
